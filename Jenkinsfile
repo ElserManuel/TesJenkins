@@ -1,42 +1,65 @@
 pipeline {
     agent any
     tools {
-        maven 'Maven 3.9.6'
-        jdk 'JDK 17'
+        maven 'Maven396'  // Usa el nombre exacto configurado en Jenkins
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                // Clonar el repositorio Git
+                git branch: 'master', url: 'https://github.com/ElserManuel/TesJenkins.git'
+            }
+        }
+
+        stage('Verificar Ambiente') {
+            steps {
+                sh 'echo "PATH = ${PATH}"'
+                sh 'which java'
+                sh 'java -version'
+                sh 'which mvn'
+                sh 'mvn -v'
+            }
+        }
+
         stage('Compilar') {
             steps {
-                dir('C:\\Users\\gorse\\OneDrive\\Desktop\\AS222S6\\demo') {
-                    sh 'mvn clean install -DskipTests'
-                }
+                sh '''
+                    export JAVA_HOME=/opt/java/openjdk
+                    mvn clean install -DskipTests
+                '''
             }
         }
 
         stage('Pruebas') {
             steps {
-                dir('C:\\Users\\gorse\\OneDrive\\Desktop\\AS222S6\\demo') {
-                    sh 'mvn test'
-                }
+                sh '''
+                    export JAVA_HOME=/opt/java/openjdk
+                    mvn test
+                '''
             }
         }
 
         stage('Empaquetar') {
             steps {
-                dir('C:\\Users\\gorse\\OneDrive\\Desktop\\AS222S6\\demo') {
-                    sh 'mvn package -DskipTests'
-                }
+                sh '''
+                    export JAVA_HOME=/opt/java/openjdk
+                    mvn package -DskipTests
+                '''
             }
         }
     }
 
     post {
         success {
-            echo '✅ Build completado localmente.'
+            echo '✅ Build completado exitosamente.'
+            archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
         }
         failure {
             echo '❌ Algo falló en el build.'
+        }
+        always {
+            junit '**/target/surefire-reports/*.xml'
         }
     }
 }
